@@ -1,5 +1,5 @@
-export default function Post(){
+export default async function Post({ params }: { params: { id: number } }){
   return(
-    <p>post</p>
+    <p>post {params.id}</p>
   )
 }
