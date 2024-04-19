@@ -1,4 +1,5 @@
-import {postwithAuthor} from "../page"
+import { prisma } from "@/db"
+import { Prisma } from "@prisma/client";
 import Link from "next/link"
 export type TPost = {
   id : Number
@@ -46,39 +47,83 @@ type TPostWithAuthor = {
   authorId: number;
 }
 
-export function PostItem(post:TPostWithAuthor){
-  return (
-        <article className={'flex max-w-xl flex-col items-start justify-between'}>
-          <div className="flex items-center gap-x-4 text-xs">
-            <time dateTime={post.updatedAt.toISOString()} className="text-gray-500">
-              {post.updatedAt.toISOString()}
-            </time>
-            {post.categories.map(category=>{
-                return <a href="#" className="relative z-10 rounded-full bg-gray-50 px-3 py-1.5 font-medium text-gray-600 hover:bg-gray-100">
-                  {category.name}
-                </a>
+async function getUsersWithPosts() {
+  const posts = await prisma.post.findMany({
+    include: {
+      author: {
+        select: {
+          name: true,
+        },
+      },
+      categories: true,
+    },
+  });
+  let c = await setTimeout(() => {
+    console.log("test");
+    return "test";
+  }, 3000);
+  return posts;
+}
 
-            })}
-          </div>
-          <div>
-            <h2>{post.title}</h2>
-            <p>{post.description}</p>
-          </div>
-          <div className="relative mt-8 flex items-center gap-x-4">
-            <img src="https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="" className="h-10 w-10 rounded-full bg-gray-50" />
-            <div className="text-sm leading-6">
-              <p className="font-semibold text-gray-900">
-                <a href="#">
-                  <span className="absolute inset-0"></span>
-                  {post.author.name}
-                </a>
-              </p>
-              <p className="text-gray-600">Co-Founder / CTO</p>
+export type postwithAuthor = Prisma.PromiseReturnType<typeof getUsersWithPosts>;
+
+export async function PostItem(post:TPostWithAuthor){
+
+    const postsWitAuthor:postwithAuthor = await getUsersWithPosts();
+  console.log(postsWitAuthor);
+  return (
+    <div>
+      {postsWitAuthor.map((post) => {
+        return (
+          <article
+            key={post.title}
+            className="flex max-w-xl flex-col items-start justify-between"
+          >
+            <div className="flex items-center gap-x-4 text-xs">
+              <time
+                dateTime={post.updatedAt.toISOString()}
+                className="text-gray-500"
+              >
+                {post.updatedAt.toISOString()}
+              </time>
+              {post.categories.map((category) => {
+                return (
+                  <div
+                    key={category.name}
+                    className="relative z-10 rounded-full bg-gray-50 px-3 py-1.5 font-medium text-gray-600 hover:bg-gray-100"
+                  >
+                    {category.name}
+                  </div>
+                );
+              })}
             </div>
-          </div>
-          <div className="text-sm text-blue-300">
-              <Link href={`/posts/${post.id}`}>Go to</Link>
-          </div>
-        </article>
-  )
+            <div>
+              <h3 className="mt-3 text-lg font-semibold leading-6 text-gray-900 group-hover:text-gray-600">
+                <Link href={`/posts/${post.id}`}>{post.title}</Link>
+              </h3>
+              <p className="mt-5 text-sm tezt-gray-600 line-clamp-3">
+                {post.description}
+              </p>
+            </div>
+            <div className="relative mt-8 flex items-center gap-x-4">
+              <img
+                src="https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+                alt=""
+                className="h-10 w-10 rounded-full bg-gray-50"
+              />
+              <div className="text-sm leading-6">
+                <div className="font-semibold text-gray-900">
+                  <div>
+                    <span className="absolute inset-0"></span>
+                    {post.author.name}
+                  </div>
+                </div>
+                <p className="text-gray-600">Co-Founder / CTO</p>
+              </div>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
 }
